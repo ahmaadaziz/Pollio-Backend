@@ -1,18 +1,5 @@
 const mongoose = require("mongoose");
 
-// const optionsSchema = new mongoose.Schema({
-//   title: {
-//     type: String,
-//     required: true,
-//     trim: true,
-//   },
-//   value: {
-//     type: Boolean,
-//     required: true,
-//     default: false,
-//   },
-// });
-
 const pollSchema = new mongoose.Schema({
   title: {
     type: String,
