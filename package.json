@@ -4,8 +4,12 @@
   "description": "Backend for Pollio",
   "main": "index.js",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.5",
     "express": "^4.17.1",
-    "mongoose": "^6.0.5"
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^6.0.5",
+    "validator": "^13.6.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.12"
@@ -17,12 +21,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/meMohammadAziz/Pollio.git"
+    "url": "git+https://github.com/ahmaadaziz/Pollio-Backend.git"
   },
   "author": "Ahmad Aziz",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/meMohammadAziz/Pollio/issues"
+    "url": "https://github.com/ahmaadaziz/Pollio-Backend/issues"
   },
-  "homepage": "https://github.com/meMohammadAziz/Pollio/tree/backend"
+  "homepage": "https://github.com/ahmaadaziz/Pollio-Backend"
 }
