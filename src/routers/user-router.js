@@ -1,14 +1,40 @@
 const express = require("express");
 const User = require("../models/user-model");
 const router = new express.Router();
+const auth = require("../middleware/auth");
+
+const maxAge = 1000 * 60 * 60 * 24 * 365 * 5;
 
 router.post("/users/signup", async (req, res) => {
   const newUser = new User(req.body);
   try {
     await newUser.save();
-    res.status(201).send({ newUser, success: "Yay user was saved" });
+    const token = await newUser.generateAuthToken();
+    res
+      .status(201)
+      .cookie("jwt", token, {
+        httpOnly: true,
+        maxAge,
+      })
+      .cookie("isLoggedIn", true, { maxAge })
+      .send();
   } catch (error) {
     res.status(400).send(error);
+  }
+});
+
+router.post("/users/logout", auth, async (req, res) => {
+  try {
+    req.user.tokens = req.user.tokens.filter((token) => {
+      token.token !== req.token;
+    });
+    await req.user.save();
+    res
+      .cookie("jwt", "", { httpOnly: true })
+      .cookie("isLoggedIn", false, { maxAge })
+      .send();
+  } catch (error) {
+    res.status(500).send(error);
   }
 });
 

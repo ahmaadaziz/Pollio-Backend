@@ -48,13 +48,20 @@ userSchema.virtual("polls", {
 });
 
 userSchema.methods.generateAuthToken = async function () {
-  const token = jwt.sign({ _id: this._id.toString() }, "XÆA-Xii");
+  const token = jwt.sign({ _id: this._id.toString() }, "Yamete!Kudasai!");
   this.tokens = this.tokens.concat({ token });
   await this.save();
   return token;
 };
 
-userSchema.statics.findByCredentials = async function () {};
+userSchema.statics.findByCredentials = async function (email, password) {
+  const user = await User.findOne({ email });
+  if (!user)
+    throw new Error({ message: "Unable to login check your credentials" });
+  const isPasswordMatch = await bcrypt.compare(password, user.password);
+  if (!isPasswordMatch)
+    throw new Error({ message: "Unable to login check your credentials" });
+};
 
 userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
