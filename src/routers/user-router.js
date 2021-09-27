@@ -5,7 +5,7 @@ const auth = require("../middleware/auth");
 
 const maxAge = 1000 * 60 * 60 * 24 * 365 * 5;
 
-router.post("/users/signup", async (req, res) => {
+router.post("/users/", async (req, res) => {
   const newUser = new User(req.body);
   try {
     await newUser.save();
@@ -14,9 +14,8 @@ router.post("/users/signup", async (req, res) => {
       .status(201)
       .cookie("jwt", token, {
         httpOnly: true,
-        maxAge,
       })
-      .cookie("isLoggedIn", true, { maxAge })
+      .cookie("isLoggedIn", true)
       .send();
   } catch (error) {
     res.status(400).send(error);
@@ -31,23 +30,28 @@ router.post("/users/logout", auth, async (req, res) => {
     await req.user.save();
     res
       .cookie("jwt", "", { httpOnly: true })
-      .cookie("isLoggedIn", false, { maxAge })
-      .send();
+      .cookie("isLoggedIn", false, { maxAge });
+    res.send();
   } catch (error) {
     res.status(500).send(error);
   }
 });
 
-router.get("/users", async (req, res) => {
+router.post("users/login", async (req, res) => {
+  const { email, password, rememberMe } = req.body;
   try {
-    const users = await User.find({});
-    res.send(users);
+    const user = await User.findbyCredentials(email, password);
+    const token = await user.generateAuthToken();
+    res
+      .cookie("jwt", token, { httpOnly: true, ...(rememberMe && { maxAge }) })
+      .cookie("isLoggedIn", true, { ...(rememberMe && { maxAge }) });
+    res.send();
   } catch (error) {
-    res.status(404).send(error);
+    res.status(500).send(error);
   }
 });
 
-router.get("/users/:id", async (req, res) => {
+router.get("/users/:id", auth, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).send({ error: "User not found" });
@@ -57,7 +61,11 @@ router.get("/users/:id", async (req, res) => {
   }
 });
 
-router.patch("/users/:id", async (req, res) => {
+router.get("/users/me", auth, async (req, res) => {
+  res.send(req.user);
+});
+
+router.patch("/users/me", auth, async (req, res) => {
   const update = Object.keys(req.body);
   const allowedUpdates = ["name", "email", "password"];
   const isValid = update.every((element) => allowedUpdates.includes(element));
@@ -65,21 +73,18 @@ router.patch("/users/:id", async (req, res) => {
   if (!isValid)
     return res.status(400).send({ error: "Invalid update or not Allowed!" });
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).send({ error: "User not found" });
-    update.forEach((update) => (user[update] = req.body[update]));
-    await user.save();
-    res.send(user);
+    update.forEach((update) => (req.user[update] = req.body[update]));
+    await req.user.save();
+    res.send(req.user);
   } catch (error) {
     res.status(500).send(error);
   }
 });
 
-router.delete("/users/:id", async (req, res) => {
+router.delete("/users/me", auth, async (req, res) => {
   try {
-    const user = await User.findByIdAndRemove(req.params.id);
-    if (!user) return res.status(404).send({ error: "User not found" });
-    res.send(user);
+    await req.user.remove();
+    res.send(req.user);
   } catch (error) {
     res.status(500).send(error);
   }

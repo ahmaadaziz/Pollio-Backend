@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const Poll = require("./poll-model");
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -27,7 +28,7 @@ const userSchema = new mongoose.Schema({
     minlength: 6,
     validate(value) {
       if (value.toLowerCase().includes("password")) {
-        throw new Error("You're password cannot contain the work 'Password'");
+        throw new Error("You're password cannot contain the word 'Password'");
       }
     },
   },
@@ -63,11 +64,18 @@ userSchema.statics.findByCredentials = async function (email, password) {
     throw new Error({ message: "Unable to login check your credentials" });
 };
 
+//Encrypt Password Before Saving
 userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 8);
   }
 
+  next();
+});
+
+//Remove all polls owned by a user before deleting the user
+userSchema.pre("remove", async function (next) {
+  await Poll.deleteMany({ owner: this._id });
   next();
 });
 
