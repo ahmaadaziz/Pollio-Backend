@@ -16,9 +16,27 @@ router.post("/users/", async (req, res) => {
         httpOnly: true,
       })
       .cookie("isLoggedIn", true)
-      .send();
+      .send(newUser);
   } catch (error) {
     res.status(400).send(error);
+  }
+});
+
+router.post("users/login", async (req, res) => {
+  try {
+    if (!req.cookies.isLoggedIn) {
+      const { email, password, rememberMe } = req.body;
+      const user = await User.findbyCredentials(email, password);
+      const token = await user.generateAuthToken();
+      res
+        .cookie("jwt", token, { httpOnly: true, ...(rememberMe && { maxAge }) })
+        .cookie("isLoggedIn", true, { ...(rememberMe && { maxAge }) });
+      res.send();
+    } else {
+      throw new Error("You are already logged in...you cheeky little!");
+    }
+  } catch (error) {
+    res.status(500).send(error);
   }
 });
 
@@ -28,23 +46,19 @@ router.post("/users/logout", auth, async (req, res) => {
       token.token !== req.token;
     });
     await req.user.save();
-    res
-      .cookie("jwt", "", { httpOnly: true })
-      .cookie("isLoggedIn", false, { maxAge });
+    res.cookie("jwt", "", { httpOnly: true }).cookie("isLoggedIn", false);
     res.send();
   } catch (error) {
     res.status(500).send(error);
   }
 });
 
-router.post("users/login", async (req, res) => {
-  const { email, password, rememberMe } = req.body;
+router.post("/users/logoutall", auth, async (req, res) => {
   try {
-    const user = await User.findbyCredentials(email, password);
-    const token = await user.generateAuthToken();
-    res
-      .cookie("jwt", token, { httpOnly: true, ...(rememberMe && { maxAge }) })
-      .cookie("isLoggedIn", true, { ...(rememberMe && { maxAge }) });
+    req.user.tokens = [];
+    await req.user.save();
+    res.cookie("jwt", "", { httpOnly: true }).cookie("isLoggedIn", false);
+    await req.user.save();
     res.send();
   } catch (error) {
     res.status(500).send(error);
