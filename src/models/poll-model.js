@@ -57,10 +57,22 @@ const pollSchema = new mongoose.Schema(
         },
       },
     ],
-    votedEnded: {
+    voteEnded: {
       type: Boolean,
       required: true,
       default: false,
+    },
+    timeLimit: {
+      type: String,
+      required: [
+        true,
+        `Please provide time limit in the following string format - 
+        (unit):(insert required number herer)
+
+        Available units are: minute and day
+        
+        Example - minute:5 (Time limit is 5 minutes)`,
+      ],
     },
   },
   { timestamps: true }
