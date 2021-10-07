@@ -57,11 +57,14 @@ userSchema.methods.generateAuthToken = async function () {
 
 userSchema.statics.findByCredentials = async function (email, password) {
   const user = await User.findOne({ email });
-  if (!user)
+  if (!user) {
     throw new Error({ message: "Unable to login check your credentials" });
+  }
   const isPasswordMatch = await bcrypt.compare(password, user.password);
-  if (!isPasswordMatch)
+  if (!isPasswordMatch) {
     throw new Error({ message: "Unable to login check your credentials" });
+  }
+  return user;
 };
 
 //Encrypt Password Before Saving

@@ -1,7 +1,14 @@
+//NPM Imports
 const express = require("express");
+
+//JS Imports
 const Poll = require("../models/poll-model");
+
+//Middleware
 const validateVote = require("../middleware/validate-vote");
 const auth = require("../middleware/auth");
+
+//Express Imports
 const router = new express.Router();
 
 router.post("/polls", auth, async (req, res) => {

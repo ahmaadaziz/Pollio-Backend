@@ -1,10 +1,18 @@
+//NPM Imports
 const express = require("express");
+
+//JS Imports
 const User = require("../models/user-model");
-const router = new express.Router();
+
+//Middleware
 const auth = require("../middleware/auth");
+
+//Express Imports
+const router = new express.Router();
 
 const maxAge = 1000 * 60 * 60 * 24 * 365 * 5;
 
+//POST Routes
 router.post("/users/", async (req, res) => {
   const newUser = new User(req.body);
   try {
@@ -22,18 +30,20 @@ router.post("/users/", async (req, res) => {
   }
 });
 
-router.post("users/login", async (req, res) => {
+router.post("/users/login", async (req, res) => {
   try {
-    if (!req.cookies.isLoggedIn) {
+    const isTrue = req.cookies.isLoggedIn === "true";
+    if (!isTrue) {
       const { email, password, rememberMe } = req.body;
-      const user = await User.findbyCredentials(email, password);
+      const user = await User.findByCredentials(email, password);
+      console.log(user);
       const token = await user.generateAuthToken();
       res
         .cookie("jwt", token, { httpOnly: true, ...(rememberMe && { maxAge }) })
         .cookie("isLoggedIn", true, { ...(rememberMe && { maxAge }) });
       res.send();
     } else {
-      throw new Error("You are already logged in...you cheeky little!");
+      throw new Error();
     }
   } catch (error) {
     res.status(500).send(error);
@@ -65,6 +75,7 @@ router.post("/users/logoutall", auth, async (req, res) => {
   }
 });
 
+//GET Routes
 router.get("/users/:id", auth, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -79,6 +90,7 @@ router.get("/users/me", auth, async (req, res) => {
   res.send(req.user);
 });
 
+//PATCH Routes
 router.patch("/users/me", auth, async (req, res) => {
   const update = Object.keys(req.body);
   const allowedUpdates = ["name", "email", "password"];
@@ -95,6 +107,7 @@ router.patch("/users/me", auth, async (req, res) => {
   }
 });
 
+//DELETE Routes
 router.delete("/users/me", auth, async (req, res) => {
   try {
     await req.user.remove();
