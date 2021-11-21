@@ -7,10 +7,10 @@ const validateVote = async (req, res, next) => {
         (e) => e.userId === req.params.user._id
       );
       if (alreadyVoted) {
-        throw new Error("You have already Voted!");
+        throw { error: "You have already Voted!" };
       }
     } else {
-      throw new Error("Voting has already Ended!");
+      throw { error: "Voting has Ended" };
     }
     req.poll = poll;
     next();

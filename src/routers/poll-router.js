@@ -36,7 +36,7 @@ router.get("/polls", async (req, res) => {
 router.get("/polls/:id", async (req, res) => {
   try {
     const poll = await Poll.findById(req.params.id);
-    if (!poll) throw new Error({ message: "Poll not Found!" });
+    if (!poll) throw { error: "Poll not Found!" };
     res.send(poll);
   } catch (error) {
     res.status(500).send(error);

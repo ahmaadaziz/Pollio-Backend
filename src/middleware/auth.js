@@ -5,15 +5,19 @@ const auth = async (req, res, next) => {
   try {
     const cookies = req.cookies;
     const isTrue = cookies.isLoggedIn === "true";
-    if (!isTrue) throw new Error("Please login or create a new account!");
+    if (!isTrue) {
+      throw new Error("Please login or create a new account!");
+    }
 
     const token = cookies.jwt;
     const decode = jwt.verify(token, "Yamete!Kudasai!");
     const user = await User.findOne({
       _id: decode._id,
     });
-    if (!user) throw new Error("User does not exist anymore");
 
+    if (!user) {
+      throw { error: "User does not exist anymore" };
+    }
     req.isLoggedIn = isTrue;
     req.token = token;
     req.user = user;

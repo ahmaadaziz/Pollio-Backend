@@ -10,46 +10,55 @@ const auth = require("../middleware/auth");
 //Express Imports
 const router = new express.Router();
 
-const maxAge = 1000 * 60 * 60 * 24 * 365 * 5;
+const maxAge = 1000 * 60 * 60 * 24 * 30;
 
-//POST Routes
+//#region POST Routes
+
+//Sign Up
 router.post("/users/", async (req, res) => {
   const newUser = new User(req.body);
+  const isTrue = req.cookies.isLoggedIn === "true";
   try {
-    await newUser.save();
-    const token = await newUser.generateAuthToken();
-    res
-      .status(201)
-      .cookie("jwt", token, {
-        httpOnly: true,
-      })
-      .cookie("isLoggedIn", true)
-      .send(newUser);
+    if (!isTrue) {
+      await newUser.save();
+      const token = await newUser.generateAuthToken();
+      res
+        .status(201)
+        .cookie("jwt", token, {
+          httpOnly: true,
+        })
+        .cookie("isLoggedIn", true)
+        .send(newUser);
+    } else {
+      throw { error: "Logout first to create a new account!" };
+    }
   } catch (error) {
-    res.status(400).send(error);
+    res.status(400).json(error);
   }
 });
 
+//Login In
 router.post("/users/login", async (req, res) => {
   try {
     const isTrue = req.cookies.isLoggedIn === "true";
     if (!isTrue) {
-      const { email, password, rememberMe } = req.body;
+      const { email, password } = req.body;
+      const rememberMe = req.body.rememberMe === "true";
       const user = await User.findByCredentials(email, password);
-      console.log(user);
       const token = await user.generateAuthToken();
       res
         .cookie("jwt", token, { httpOnly: true, ...(rememberMe && { maxAge }) })
         .cookie("isLoggedIn", true, { ...(rememberMe && { maxAge }) });
       res.send();
     } else {
-      throw new Error();
+      throw { error: "Already logged in" };
     }
   } catch (error) {
-    res.status(500).send(error);
+    res.status(500).json(error);
   }
 });
 
+//Logout
 router.post("/users/logout", auth, async (req, res) => {
   try {
     req.user.tokens = req.user.tokens.filter((token) => {
@@ -63,6 +72,7 @@ router.post("/users/logout", auth, async (req, res) => {
   }
 });
 
+//Logout from all devices
 router.post("/users/logoutall", auth, async (req, res) => {
   try {
     req.user.tokens = [];
@@ -75,7 +85,16 @@ router.post("/users/logoutall", auth, async (req, res) => {
   }
 });
 
-//GET Routes
+//#endregion
+
+//#region GET Routes
+
+//Get current user profile
+router.get("/users/me", auth, async (req, res) => {
+  res.send(req.user);
+});
+
+//Get a user profile by Id
 router.get("/users/:id", auth, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -86,11 +105,11 @@ router.get("/users/:id", auth, async (req, res) => {
   }
 });
 
-router.get("/users/me", auth, async (req, res) => {
-  res.send(req.user);
-});
+//#endregion
 
-//PATCH Routes
+//#region PATCH Routes
+
+//Update current user profile
 router.patch("/users/me", auth, async (req, res) => {
   const update = Object.keys(req.body);
   const allowedUpdates = ["name", "email", "password"];
@@ -107,7 +126,11 @@ router.patch("/users/me", auth, async (req, res) => {
   }
 });
 
-//DELETE Routes
+//#endregion
+
+//#region DELETE Routes
+
+//Delete current user profile
 router.delete("/users/me", auth, async (req, res) => {
   try {
     await req.user.remove();
@@ -116,5 +139,7 @@ router.delete("/users/me", auth, async (req, res) => {
     res.status(500).send(error);
   }
 });
+
+//#endregion
 
 module.exports = router;
